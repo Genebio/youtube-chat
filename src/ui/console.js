@@ -37,7 +37,6 @@ export function displayVideoInfo(videoMetadata, locale) {
   console.log(getMessage('video_info_title', locale, { title: videoMetadata.title }));
   console.log(getMessage('video_info_author', locale, { author: videoMetadata.author }));
   console.log(getMessage('video_info_duration', locale, { duration: formatTimestamp(videoMetadata.duration) }));
-  console.log('');
 }
 
 /**
@@ -86,10 +85,10 @@ export function startThinkingSpinner(text) {
 /**
  * Display assistant response
  * @param {string} content - Response content
- * @param {string} locale - Current locale
  */
-export function displayAssistantResponse(content, locale) {
-  console.log(`${getMessage('role_assistant', locale)}: ${renderMarkdown(content)}\n`);
+export function displayAssistantResponse(content) {
+  const rendered = renderMarkdown(content.trim());
+  process.stdout.write(rendered.trimEnd() + '\n');
 }
 
 /**

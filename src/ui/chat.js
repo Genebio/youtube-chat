@@ -1,7 +1,9 @@
 import readline from "readline";
+import ansiEscapes from "ansi-escapes";
 import { getMessage } from "../../localization.js";
 import { displayChatHeader, startThinkingSpinner, displayAssistantResponse, displayError } from "./console.js";
 import { handleExportCommand, handleLangCommand } from "./prompts.js";
+import { getTerminalSeparator } from "../utils/formatting.js";
 
 /**
  * Start the interactive chat session
@@ -23,8 +25,37 @@ export async function startChat(agent, conversationHistory, videoMetadata, youtu
   displayChatHeader(uiLanguage, transcriptLanguage, locale);
 
   const askQuestion = () => {
-    rl.question(`${getMessage('role_you', locale)}: `, async (input) => {
+    // Print top separator and prompt
+    process.stdout.write(`\n${getTerminalSeparator('─')}\n> `);
+
+    // Print bottom separator below, then move cursor back up to prompt line
+    process.stdout.write('\n' + getTerminalSeparator('─'));
+    process.stdout.write(ansiEscapes.cursorUp(1) + ansiEscapes.cursorTo(2));
+
+    // Maintain bottom separator while user is typing
+    const separatorInterval = setInterval(() => {
+      process.stdout.write(ansiEscapes.cursorSavePosition);
+      process.stdout.write(ansiEscapes.cursorDown(1) + ansiEscapes.cursorTo(0));
+      process.stdout.write(getTerminalSeparator('─'));
+      process.stdout.write(ansiEscapes.cursorRestorePosition);
+    }, 50); // Redraw every 50ms
+
+    rl.once('line', async (input) => {
+      // Stop the separator maintenance
+      clearInterval(separatorInterval);
+
       const userInput = input.trim();
+
+      // Erase bottom separator
+      process.stdout.write(ansiEscapes.cursorDown(1) + ansiEscapes.eraseLine);
+
+      // Move back up to prompt line, go to beginning, erase top separator line above
+      process.stdout.write(ansiEscapes.cursorUp(1) + ansiEscapes.cursorTo(0));
+      process.stdout.write(ansiEscapes.cursorUp(1) + ansiEscapes.eraseLine);
+
+      // Move back down to after the user input and print newline to continue
+      process.stdout.write(ansiEscapes.cursorDown(1) + ansiEscapes.cursorTo(0));
+      process.stdout.write('\n');
 
       if (!userInput) {
         askQuestion();
@@ -77,7 +108,7 @@ export async function startChat(agent, conversationHistory, videoMetadata, youtu
         });
 
         thinkingSpinner.stop();
-        displayAssistantResponse(lastMessage.content, locale);
+        displayAssistantResponse(lastMessage.content);
       } catch (error) {
         displayError('error_general', locale, { error: error.message });
       }

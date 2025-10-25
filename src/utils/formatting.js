@@ -57,3 +57,14 @@ export function padEndVisual(str, targetWidth, padChar = ' ') {
   const paddingNeeded = targetWidth - currentWidth;
   return str + padChar.repeat(paddingNeeded);
 }
+
+/**
+ * Get a separator line that matches terminal width
+ * @param {string} char - Character to use for separator (default: '─')
+ * @param {number} minWidth - Minimum width if terminal width unavailable
+ * @returns {string} Separator line
+ */
+export function getTerminalSeparator(char = '─', minWidth = 60) {
+  const width = process.stdout.columns || minWidth;
+  return char.repeat(width);
+}
